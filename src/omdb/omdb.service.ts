@@ -4,7 +4,7 @@ import { error } from 'console';
 
 @Injectable()
 export class OmdbService {
-  private readonly apikey = process.env.OMDBAPIKEY;
+  private readonly apikey = process.env.OMDB_API_KEY;
   private readonly baseUrl = 'http://www.omdbapi.com';
 
   async searchMovie(title: string) {
