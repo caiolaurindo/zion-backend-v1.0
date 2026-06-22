@@ -7,6 +7,7 @@ import { GroqModule } from './groq/groq.module';
 import { QuizModule } from './quiz/quiz.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
+import { HistoryModule } from './history/history.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AuthModule } from './auth/auth.module';
     GroqModule,
     QuizModule,
     AuthModule,
+    HistoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
