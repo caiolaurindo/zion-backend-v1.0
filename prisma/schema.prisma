@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  history   History[]
+}
+
+model Movie {
+  id        String   @id @default(uuid())
+  title     String
+  poster    String
+  year      String
+  rating    String
+  director  String
+  runtime   String
+  plot      String
+  actors    String[]
+
+  history   History[]
+}
+
+model History {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  liked     Boolean?
+  watched   Boolean  @default(false)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  movieId   String
+  movie     Movie    @relation(fields: [movieId], references: [id])
+}

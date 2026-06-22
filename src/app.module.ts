@@ -5,13 +5,17 @@ import { ConfigModule } from '@nestjs/config';
 import { OmdbModule } from './omdb/omdb.module';
 import { GroqModule } from './groq/groq.module';
 import { QuizModule } from './quiz/quiz.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
     OmdbModule,
     GroqModule,
     QuizModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
