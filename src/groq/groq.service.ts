@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { Groq } from 'groq-sdk';
+import Groq from 'groq-sdk';
+
+interface HistoryContext {
+  seen: string[];
+  liked: string[];
+  disliked: string[];
+}
 
 @Injectable()
 export class GroqService {
@@ -7,23 +13,39 @@ export class GroqService {
     apiKey: process.env.GROQ_API_KEY,
   });
 
-  async suggestMovie(answers: Record<string, string>): Promise<string> {
+  async suggestMovie(answers: Record<string, string>, context?: HistoryContext): Promise<string> {
     const extra = answers.extra
       ? `Observação do usuário: ${answers.extra}`
       : '';
 
+    const seenBlock = context?.seen.length
+      ? `Filmes já sugeridos (NÃO repita nenhum deles): ${context.seen.join(', ')}`
+      : '';
+
+    const likedBlock = context?.liked.length
+      ? `Filmes que o usuário GOSTOU (sugira algo parecido): ${context.liked.join(', ')}`
+      : '';
+
+    const dislikedBlock = context?.disliked.length
+      ? `Filmes que o usuário NÃO GOSTOU (evite esse estilo): ${context.disliked.join(', ')}`
+      : '';
+
     const prompt = `
       Com base nas respostas abaixo, sugira UM filme real que combine perfeitamente.
-  Responda APENAS com o título original do filme em inglês.
-  Não invente filmes. Não traduza o título. Sem explicações, sem pontuação extra.
+      Responda APENAS com o título original do filme em inglês.
+      Não invente filmes. Não traduza o título. Sem explicações, sem pontuação extra.
 
-  Humor atual: ${answers.mood}
-  Tempo disponível: ${answers.duration}
-  Companhia: ${answers.company}
-  Época preferida: ${answers.era}
-  Tipo de experiência: ${answers.depth}
-  Preferência de origem: ${answers.origin}
-  ${extra}
+      Humor atual: ${answers.mood}
+      Tempo disponível: ${answers.duration}
+      Companhia: ${answers.company}
+      Época preferida: ${answers.era}
+      Tipo de experiência: ${answers.depth}
+      Preferência de origem: ${answers.origin}
+      ${extra}
+
+      ${seenBlock}
+      ${likedBlock}
+      ${dislikedBlock}
     `;
 
     const completion = await this.client.chat.completions.create({
