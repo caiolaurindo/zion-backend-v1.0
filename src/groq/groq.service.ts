@@ -12,8 +12,41 @@ export class GroqService {
   private readonly client = new Groq({
     apiKey: process.env.GROQ_API_KEY,
   });
+  async suggestRandom(context?: {
+    seen: string[];
+    liked: string[];
+  }): Promise<string> {
+    const seenBlock = context?.seen.length
+      ? `Filmes já sugeridos (NÃO repita nenhum deles): ${context.seen.join(', ')}`
+      : '';
 
-  async suggestMovie(answers: Record<string, string>, context?: HistoryContext): Promise<string> {
+    const likedBlock = context?.liked.length
+      ? `Filmes que o usuário GOSTOU (sugira algo no mesmo estilo): ${context.liked.join(', ')}`
+      : '';
+
+    const prompt = `
+    Sugira UM filme real de forma surpreendente.
+    Responda APENAS com o título original do filme em inglês.
+    Não invente filmes. Não traduza o título. Sem explicações, sem pontuação extra.
+    Pode ser qualquer gênero, época ou origem — surpreenda.
+
+    ${seenBlock}
+    ${likedBlock}
+  `;
+
+    const completion = await this.client.chat.completions.create({
+      model: 'llama-3.1-8b-instant',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 1.2,
+    });
+
+    return completion.choices[0].message.content?.trim() ?? '';
+  }
+
+  async suggestMovie(
+    answers: Record<string, string>,
+    context?: HistoryContext,
+  ): Promise<string> {
     const extra = answers.extra
       ? `Observação do usuário: ${answers.extra}`
       : '';

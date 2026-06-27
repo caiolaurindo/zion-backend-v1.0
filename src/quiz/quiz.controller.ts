@@ -11,4 +11,10 @@ export class QuizController {
   async recommend(@Body() answers: Record<string, string>, @Req() req: any) {
     return this.quizService.recommend(answers, req.user?.sub ?? null);
   }
+
+  @Post('random')
+  @UseGuards(AuthOptionalGuard)
+  async random(@Req() req: any) {
+    return this.quizService.random(req.user?.sub ?? null);
+  }
 }

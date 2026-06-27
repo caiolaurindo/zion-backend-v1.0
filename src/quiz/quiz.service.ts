@@ -10,6 +10,65 @@ export class QuizService {
     private readonly omdbService: OmdbService,
     private readonly prisma: PrismaService,
   ) {}
+  async random(userId: string | null) {
+    let seen: string[] = [];
+    let liked: string[] = [];
+
+    if (userId) {
+      await this.prisma.user.upsert({
+        where: { id: userId },
+        update: {},
+        create: { id: userId },
+      });
+
+      const history = await this.prisma.history.findMany({
+        where: { userId },
+        include: { movie: true },
+      });
+
+      seen = history.map((h) => h.movie.title);
+      liked = history.filter((h) => h.liked === true).map((h) => h.movie.title);
+    }
+
+    const movieTitle = await this.groqService.suggestRandom({ seen, liked });
+    const movie = await this.omdbService.searchMovie(movieTitle);
+
+    if ('error' in movie) {
+      return { error: movie.error };
+    }
+
+    if (userId) {
+      let savedMovie = await this.prisma.movie.findFirst({
+        where: { title: movie.title },
+      });
+
+      if (!savedMovie) {
+        savedMovie = await this.prisma.movie.create({
+          data: {
+            title: movie.title,
+            poster: movie.poster,
+            year: movie.year,
+            rating: movie.rating,
+            director: movie.director,
+            runtime: movie.runtime,
+            plot: movie.plot,
+            actors: movie.actors,
+          },
+        });
+      }
+
+      const historyEntry = await this.prisma.history.create({
+        data: { userId, movieId: savedMovie.id },
+      });
+
+      return {
+        historyId: historyEntry.id,
+        ...movie,
+      };
+    }
+
+    return { ...movie };
+  }
 
   async recommend(answers: Record<string, string>, userId: string | null) {
     let seen: string[] = [];
