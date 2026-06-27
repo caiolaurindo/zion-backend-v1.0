@@ -69,9 +69,15 @@ export class QuizService {
         });
       }
 
-      await this.prisma.history.create({
+      const historyEntry = await this.prisma.history.create({
         data: { userId, movieId: savedMovie.id },
       });
+
+      return {
+        suggestedBy: movieTitle,
+        historyId: historyEntry.id,
+        ...movie,
+      };
     }
 
     return {
