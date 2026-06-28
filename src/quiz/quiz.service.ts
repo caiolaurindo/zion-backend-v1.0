@@ -10,7 +10,7 @@ export class QuizService {
     private readonly omdbService: OmdbService,
     private readonly prisma: PrismaService,
   ) {}
-  async random(userId: string | null) {
+  async random(userId: string | null, genre?: string | null) {
     let seen: string[] = [];
     let liked: string[] = [];
 
@@ -30,7 +30,11 @@ export class QuizService {
       liked = history.filter((h) => h.liked === true).map((h) => h.movie.title);
     }
 
-    const movieTitle = await this.groqService.suggestRandom({ seen, liked });
+    const movieTitle = await this.groqService.suggestRandom({
+      seen,
+      liked,
+      genre,
+    });
     const movie = await this.omdbService.searchMovie(movieTitle);
 
     if ('error' in movie) {

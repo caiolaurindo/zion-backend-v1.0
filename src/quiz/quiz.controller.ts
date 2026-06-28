@@ -14,7 +14,7 @@ export class QuizController {
 
   @Post('random')
   @UseGuards(AuthOptionalGuard)
-  async random(@Req() req: any) {
-    return this.quizService.random(req.user?.sub ?? null);
+  async random(@Body() body: { genre?: string }, @Req() req: any) {
+    return this.quizService.random(req.user?.sub ?? null, body.genre ?? null);
   }
 }
