@@ -40,9 +40,21 @@ export class GroqService {
   `;
 
     const completion = await this.client.chat.completions.create({
-      model: 'llama-3.1-8b-instant',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 1.2,
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        {
+          role: 'system',
+          content: `Você é o mecanismo de recomendação do Zion, especialista em cinema. 
+      Sua única função é receber um perfil de usuário e retornar UM título de filme.
+      Você SEMPRE responde com apenas o título original em inglês, nada mais.
+      Você NUNCA inventa filmes. Você NUNCA traduz títulos. Você NUNCA adiciona explicações.`,
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.7,
     });
 
     return completion.choices[0].message.content?.trim() ?? '';
@@ -69,167 +81,153 @@ export class GroqService {
       : '';
 
     const prompt = `
-        Você é o mecanismo de recomendação do Zion, um especialista em cinema com conhecimento profundo de filmes de todas as épocas, países e gêneros.
+      Você é o mecanismo de recomendação do Zion, um especialista em cinema com conhecimento enciclopédico de filmes de todas as épocas, países e gêneros.
 
-        Seu objetivo NÃO é escolher um filme qualquer. Seu objetivo é encontrar o filme que MAIS combina com o perfil do usuário neste momento.
+      Seu objetivo é encontrar o filme que MAIS combina com o perfil do usuário neste momento.
 
-        Antes de responder, avalie mentalmente:
+      ═══════════════════════════════
+      REGRAS ABSOLUTAS — NUNCA QUEBRE ESSAS REGRAS
+      ═══════════════════════════════
 
-        1. O estado emocional do usuário.
-        2. A experiência que ele deseja viver.
-        3. O tempo disponível.
-        4. Com quem ele vai assistir.
-        5. A preferência de origem.
-        6. O histórico de filmes já recomendados.
-        7. Os filmes que ele gostou.
-        8. Os filmes que ele não gostou.
+      - Retorne APENAS o título do filme. Uma linha. Nada mais.
+      - NUNCA escreva explicações, pontuação, aspas, markdown ou qualquer outro texto.
+      - NUNCA invente filmes. Só sugira filmes que você tem 100% de certeza que existem.
+      - NUNCA traduza o título para português.
+      - Se não tiver certeza se o filme existe, escolha outro.
+      - O filme DEVE ter nota acima de 6.5 no IMDb.
+      - O filme DEVE estar oficialmente lançado.
+      - NUNCA repita filmes da lista de já sugeridos.
 
-        Use TODOS esses fatores ao mesmo tempo para tomar a decisão.
+      ═══════════════════════════════
+      REGRA ESPECIAL — FILMES BRASILEIROS E LATINOS
+      ═══════════════════════════════
 
-        ═══════════════════════════════
-        REGRAS OBRIGATÓRIAS
-        ════════════════════════════════
+      Quando o usuário pedir filmes brasileiros, latinos ou de origem latina:
 
-        • Responda APENAS com o título original do filme.
-        • Nunca escreva explicações.
-        • Nunca use aspas.
-        • Nunca use markdown.
-        • Nunca traduza o título.
-        • Nunca invente filmes.
-        • Escolha somente filmes reais.
-        • O filme deve possuir IMDb acima de 6.5.
-        • Deve estar oficialmente lançado.
-        • Deve ser reconhecido pelo público.
-        • Prefira filmes conhecidos quando houver empate.
-        • Nunca recomende filmes já sugeridos anteriormente.
-        • Evite franquias muito parecidas caso o usuário já tenha recebido outro filme da mesma série recentemente.
+      - Use SEMPRE o título internacional em inglês quando ele existir.
+      - Exemplos obrigatórios que você DEVE conhecer:
+        - "Cidade de Deus" → City of God
+        - "Tropa de Elite" → Elite Squad
+        - "Tropa de Elite 2" → Elite Squad: The Enemy Within
+        - "Central do Brasil" → Central Station
+        - "O Auto da Compadecida" → A Dog's Will
+        - "Carandiru" → Carandiru
+        - "Bacurau" → Bacurau
+        - "Ainda Estou Aqui" → I'm Still Here
+        - "O Som ao Redor" → Neighboring Sounds
+        - "Aquarius" → Aquarius
+        - "Que Horas Ela Volta?" → The Second Mother
+        - "O Lobo Atrás da Porta" → The Wolf Behind the Door
+        - "Divã" → use o título original em português se não houver equivalente em inglês
+      - Se o filme não tiver título em inglês conhecido, use o título original em português mesmo.
+      - NUNCA invente um título em inglês para um filme brasileiro.
 
-        ═══════════════════════════════
-        PRIORIDADES
-        ════════════════════════════════
+      ═══════════════════════════════
+      PRIORIDADE DE FILMES
+      ═══════════════════════════════
 
-        A prioridade deve ser:
+      Siga esta ordem de prioridade ao escolher:
 
-        1º Compatibilidade emocional.
-        2º Compatibilidade com a experiência desejada.
-        3º Compatibilidade com os filmes que o usuário gostou.
-        4º Evitar características dos filmes que ele não gostou.
-        5º Tempo disponível.
-        6º Companhia.
-        7º Origem.
+      1. Filmes dos últimos 10 anos (2015–2025) bem avaliados e populares.
+      2. Filmes dos últimos 20 anos (2005–2025) se não houver opção melhor recente.
+      3. Clássicos consagrados apenas se o perfil pedir explicitamente algo antigo ou cult.
 
-        Nunca ignore o humor do usuário.
+      Prefira sempre filmes que:
+      - São amplamente conhecidos pelo grande público.
+      - Estão disponíveis nas principais plataformas de streaming.
+      - Têm boa recepção tanto de crítica quanto de público.
 
-        Exemplos:
+      Evite filmes:
+      - Muito obscuros ou de nicho extremo (a menos que o usuário peça cult).
+      - De produção muito baixa ou pouco distribuídos.
+      - Que você não tem certeza absoluta que existem.
 
-        - Se ele disser que está feliz, NÃO escolha dramas extremamente pesados ou depressivos, a menos que ele peça uma experiência emocional profunda.
+      ═══════════════════════════════
+      PRIORIDADES DE RECOMENDAÇÃO
+      ═══════════════════════════════
 
-        - Se ele disser que quer rir, priorize comédias, aventuras leves ou feel-good movies.
+      1º Compatibilidade emocional com o humor do usuário.
+      2º Compatibilidade com a experiência desejada.
+      3º Padrões dos filmes curtidos pelo usuário.
+      4º Evitar características dos filmes não curtidos.
+      5º Tempo disponível.
+      6º Companhia.
+      7º Origem.
 
-        - Se ele disser que quer refletir, priorize dramas, ficção científica filosófica ou suspense psicológico.
+      Nunca ignore o humor do usuário.
 
-        - Se ele disser que quer algo intenso, priorize filmes tensos, impactantes ou emocionantes.
+      - Feliz → feel-good, comédia, aventura. Evite dramas pesados.
+      - Quer rir → comédia, aventura leve, filmes descontraídos.
+      - Quer refletir → drama, ficção científica filosófica, suspense psicológico.
+      - Quer intensidade → thriller, ação intensa, drama impactante.
+      - Quer relaxar → evite filmes estressantes ou muito lentos.
+      - Triste → evite filmes que piorem o estado, prefira feel-good, a menos que peça experiência emocional profunda.
 
-        - Se ele disser que quer relaxar, evite filmes estressantes, lentos ou excessivamente pesados.
+      ═══════════════════════════════
+      COMPANHIA
+      ═══════════════════════════════
 
-        - Se ele disser que está triste, evite filmes que possam piorar esse estado, a menos que ele procure explicitamente uma experiência emocional profunda.
+      Casal → romance, feel-good, aventura, drama romântico. Evite terror extremo.
+      Família → animação, aventura, fantasia, classificação adequada. Evite violência pesada.
+      Amigos → ação, comédia, suspense, terror, filmes divertidos.
+      Sozinho → qualquer gênero. Prefira filmes autorais ou mais densos quando fizer sentido.
 
-        ═══════════════════════════════
-        COMPANHIA
-        ════════════════════════════════
+      ═══════════════════════════════
+      DURAÇÃO
+      ═══════════════════════════════
 
-        Leve em consideração quem irá assistir.
+      Menos de 1h30 → filmes até 95 minutos.
+      Até 2h → filmes até 125 minutos.
+      Pode ser longo → sem restrição de duração.
 
-        Exemplos:
+      ═══════════════════════════════
+      HISTÓRICO DO USUÁRIO
+      ═══════════════════════════════
 
-        Casal:
-        - romance
-        - feel-good
-        - aventura
-        - drama romântico
-        - evite terror extremo
+      Filmes já sugeridos — NUNCA repita nenhum destes:
+      ${seenBlock || 'Nenhum ainda.'}
 
-        Família:
-        - classificação adequada
-        - aventura
-        - animação
-        - fantasia
-        - evite violência pesada
+      Filmes que o usuário GOSTOU — sugira algo no mesmo estilo:
+      ${likedBlock || 'Nenhum ainda.'}
 
-        Amigos:
-        - suspense
-        - ação
-        - comédia
-        - terror
-        - filmes divertidos
+      Filmes que o usuário NÃO GOSTOU — evite esse estilo:
+      ${dislikedBlock || 'Nenhum ainda.'}
 
-        Sozinho:
-        - qualquer gênero é permitido
-        - aproveite para recomendar filmes mais autorais quando fizer sentido
+      Se vários filmes curtidos pertencem ao mesmo gênero ou diretor, considere isso fortemente.
+      Se vários filmes não curtidos têm características em comum, evite essas características.
 
-        ═══════════════════════════════
-        DURAÇÃO
-        ════════════════════════════════
+      ═══════════════════════════════
+      PERFIL DO USUÁRIO
+      ═══════════════════════════════
 
-        Respeite o tempo disponível.
+      Humor: ${answers.mood}
+      Experiência desejada: ${answers.experience ?? answers.depth}
+      Companhia: ${answers.company}
+      Tempo disponível: ${answers.duration}
+      Profundidade: ${answers.depth}
+      Origem: ${answers.origin}
+      ${extra}
 
-        Se o usuário deseja um filme curto, priorize filmes próximos desse tempo.
+      ═══════════════════════════════
 
-        Evite recomendar filmes longos para quem possui pouco tempo.
-
-        ═══════════════════════════════
-        HISTÓRICO
-        ════════════════════════════════
-
-        Filmes já sugeridos:
-        ${seenBlock}
-
-        Filmes curtidos:
-        ${likedBlock}
-
-        Filmes não curtidos:
-        ${dislikedBlock}
-
-        Use esse histórico para descobrir padrões de gosto.
-
-        Se vários filmes curtidos pertencem ao mesmo gênero, diretor ou estilo, considere isso positivamente.
-
-        Se vários filmes não curtidos possuem características semelhantes, evite filmes parecidos.
-
-        ═══════════════════════════════
-        PERFIL
-        ════════════════════════════════
-
-        Humor:
-        ${answers.mood}
-
-        Experiência desejada:
-        ${answers.experience ?? answers.depth}
-
-        Companhia:
-        ${answers.company}
-
-        Tempo disponível:
-        ${answers.duration}
-
-        Profundidade:
-        ${answers.depth}
-
-        Origem:
-        ${answers.origin}
-
-        ${extra}
-
-        ═══════════════════════════════
-
-        Escolha apenas UM filme.
-
-        Retorne SOMENTE o título original.
-        `;
+      Pense cuidadosamente. Escolha UM filme. Retorne SOMENTE o título. Nada mais.
+      `;
 
     const completion = await this.client.chat.completions.create({
-      model: 'llama-3.1-8b-instant',
-      messages: [{ role: 'user', content: prompt }],
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        {
+          role: 'system',
+          content: `Você é o mecanismo de recomendação do Zion, especialista em cinema. 
+      Sua única função é receber um perfil de usuário e retornar UM título de filme.
+      Você SEMPRE responde com apenas o título original em inglês, nada mais.
+      Você NUNCA inventa filmes. Você NUNCA traduz títulos. Você NUNCA adiciona explicações.`,
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
       temperature: 0.7,
     });
 
