@@ -18,43 +18,109 @@ export class GroqService {
     genre?: string | null;
   }): Promise<string> {
     const seenBlock = context?.seen.length
-      ? `Filmes já sugeridos (NÃO repita nenhum deles): ${context.seen.join(', ')}`
-      : '';
+      ? `Filmes já sugeridos — NUNCA repita nenhum destes: ${context.seen.join(', ')}`
+      : 'Nenhum ainda.';
 
     const likedBlock = context?.liked.length
-      ? `Filmes que o usuário GOSTOU (sugira algo no mesmo estilo): ${context.liked.join(', ')}`
-      : '';
+      ? `Filmes que o usuário GOSTOU — sugira algo no mesmo estilo: ${context.liked.join(', ')}`
+      : 'Nenhum ainda.';
 
     const genreBlock = context?.genre
-      ? `O filme DEVE ser do gênero: ${context.genre}`
-      : 'Pode ser qualquer gênero, época ou origem — surpreenda.';
+      ? `O filme DEVE ser do gênero: ${context.genre}. Escolha o filme mais popular e bem avaliado desse gênero.`
+      : 'Escolha qualquer gênero — surpreenda com algo popular e bem avaliado.';
 
     const prompt = `
-    Sugira UM filme real de forma surpreendente.
-    Responda APENAS com o título original do filme em inglês.
-    Não invente filmes. Não traduza o título. Sem explicações, sem pontuação extra.
-    ${genreBlock}
+        Você é o mecanismo de sorteio do Zion, especialista em cinema com conhecimento de todos os filmes já lançados.
 
-    ${seenBlock}
-    ${likedBlock}
-  `;
+        Sua missão: sortear UM filme popular, bem avaliado e que as pessoas adoram assistir.
+
+        ═══════════════════════════════
+        REGRAS ABSOLUTAS
+        ═══════════════════════════════
+
+        - Retorne APENAS o título do filme. Uma linha. Nada mais.
+        - NUNCA escreva explicações, pontuação, aspas, markdown ou qualquer outro texto.
+        - NUNCA invente filmes. Só sugira filmes que você tem 100% de certeza que existem.
+        - NUNCA traduza o título para português.
+        - Se não tiver certeza se o filme existe, escolha outro.
+        - O filme DEVE ter nota acima de 7.0 no IMDb.
+        - NUNCA repita filmes da lista de já sugeridos.
+
+        ═══════════════════════════════
+        REGRA ESPECIAL — FILMES BRASILEIROS E LATINOS
+        ═══════════════════════════════
+
+        - Use SEMPRE o título internacional em inglês quando ele existir.
+        - Exemplos:
+          - "Cidade de Deus" → City of God
+          - "Tropa de Elite" → Elite Squad
+          - "Central do Brasil" → Central Station
+          - "Ainda Estou Aqui" → I'm Still Here
+          - "Bacurau" → Bacurau
+        - Se não houver título em inglês conhecido, use o título original em português.
+        - NUNCA invente um título em inglês para um filme brasileiro.
+
+        ═══════════════════════════════
+        PRIORIDADE DE FILMES
+        ═══════════════════════════════
+
+        Priorize SEMPRE nesta ordem:
+
+        1. Filmes dos últimos 10 anos (2015–2025) muito populares e bem avaliados.
+        2. Clássicos consagrados que qualquer pessoa conhece (ex: Titanic, Forrest Gump, The Dark Knight).
+        3. Evite filmes obscuros, de nicho ou pouco distribuídos.
+
+        Prefira filmes que:
+        - Estão disponíveis nas principais plataformas de streaming.
+        - São amplamente conhecidos — filmes que qualquer pessoa já ouviu falar.
+        - Têm boa recepção tanto de crítica quanto de público.
+        - São os MELHORES representantes do seu gênero.
+
+        ${genreBlock}
+
+        Se um gênero foi escolhido, pense nos filmes mais icônicos desse gênero.
+        Exemplos por gênero:
+        - Comédia → The Hangover, Superbad, Game Night, Knives Out
+        - Romance → La La Land, The Notebook, Crazy Rich Asians, About Time
+        - Terror → Get Out, A Quiet Place, Hereditary, It
+        - Ação → Mad Max: Fury Road, John Wick, Top Gun: Maverick
+        - Drama → The Shawshank Redemption, Forrest Gump, A Beautiful Mind
+        - Suspense → Gone Girl, Prisoners, Parasite, Shutter Island
+        - Ficção Científica → Interstellar, Inception, Arrival, The Martian
+        - Animação → Spider-Man: Into the Spider-Verse, Soul, Coco, Up
+        - Documentário → Free Solo, Making a Murderer, The Last Dance
+
+        ═══════════════════════════════
+        HISTÓRICO DO USUÁRIO
+        ═══════════════════════════════
+
+        ${seenBlock}
+        ${likedBlock}
+
+        Se houver filmes curtidos, use o estilo deles como referência positiva.
+
+        ═══════════════════════════════
+
+        Pense cuidadosamente. Escolha UM filme popular e bem avaliado. Retorne SOMENTE o título. Nada mais.
+          `;
 
     const completion = await this.client.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
         {
           role: 'system',
-          content: `Você é o mecanismo de recomendação do Zion, especialista em cinema. 
-      Sua única função é receber um perfil de usuário e retornar UM título de filme.
-      Você SEMPRE responde com apenas o título original em inglês, nada mais.
-      Você NUNCA inventa filmes. Você NUNCA traduz títulos. Você NUNCA adiciona explicações.`,
+          content: `Você é o mecanismo de sorteio do Zion, especialista em cinema.
+            Sua única função é retornar UM título de filme popular e bem avaliado.
+            Você SEMPRE responde com apenas o título original, nada mais.
+            Você NUNCA inventa filmes. Você NUNCA traduz títulos. Você NUNCA adiciona explicações.
+            Você SEMPRE escolhe filmes que qualquer pessoa conhece.`,
         },
         {
           role: 'user',
           content: prompt,
         },
       ],
-      temperature: 0.7,
+      temperature: 1.0,
     });
 
     return completion.choices[0].message.content?.trim() ?? '';
